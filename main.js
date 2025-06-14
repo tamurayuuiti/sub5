@@ -1,3 +1,5 @@
+import { handleSolveButtonClick } from './solverHandler.js';
+
 function parseHintsTextArea(text) {
   // 各行ごとに分割し、カンマまたはスペースで区切る
   return text.trim().split('\n').map(row =>
@@ -27,6 +29,8 @@ function createEditorRows(tableId, count) {
     contentCell.className = 'line-content';
     contentCell.contentEditable = true;
     contentCell.dataset.line = i;
+    // inputmode属性を追加
+    contentCell.setAttribute('inputmode', 'numeric');
     contentCell.addEventListener('input', () => {
       // 行番号は固定なので何もしない
     });
@@ -317,98 +321,7 @@ function startTimer() {
   }, 10);
 }
 
-document.getElementById('solveBtn').addEventListener('click', async () => {
-  currentSolverId++;
-  const thisSolverId = currentSolverId;
-  stopTimer();
-  currentSolveGen = null;
-
-  const rows = parseInt(document.getElementById('rowSize').value, 10);
-  const cols = parseInt(document.getElementById('colSize').value, 10);
-
-  // 入力取得・バリデーション
-  const hints = getHints(rows, cols);
-  if (!hints) {
-    // エラー時はUIリセットのみ（計算時間・試行回数はリセットしない）
-    return;
-  }
-  const { rowHints, colHints } = hints;
-  if (rowHints.length !== rows || colHints.length !== cols) {
-    showErrorPopup('ヒント入力数が正しくありません');
-    return;
-  }
-
-  // ソルバー初期化
-  let solveGen;
-  try {
-    solveGen = window.solvePicross(rowHints, colHints);
-  } catch (err) {
-    showErrorPopup("ソルバーの初期化に失敗しました");
-    return;
-  }
-  currentSolveGen = solveGen;
-
-  // UIリセット・計算時間/試行回数リセット・グリッド初期化
-  resetSolveDisplay(rows, cols);
-
-  // DOM描画待ち
-  await new Promise(resolve => setTimeout(resolve, 20));
-  startTimer();
-
-  let stoppedByTrialLimit = false;
-
-  handleSolverStep(solveGen.next());
-
-  function handleSolverStep(prevRes) {
-    if (thisSolverId !== currentSolverId || currentSolveGen !== solveGen || stoppedByTrialLimit) {
-      stopTimer();
-      return;
-    }
-    const result = prevRes !== undefined ? prevRes : solveGen.next();
-    if (result.done) {
-      stopTimer();
-      return;
-    }
-    const data = result.value;
-    if (data.partial) {
-      renderGridOnPicrossArea(data.partial);
-      if (data.count !== undefined) {
-        document.getElementById('count').textContent = `試行回数: ${data.count}`;
-        if (data.count > 10000) {
-          stoppedByTrialLimit = true;
-          stopTimer();
-          createPicrossArea(rows, cols);
-          renderPreview([]);
-          setTimeout(() => {
-            alert("試行回数が1万回を超えたため処理を中断しました。解が存在しない可能性があります。");
-          }, 150);
-          return;
-        }
-      }
-      setTimeout(() => handleSolverStep(), 0);
-    } else if (data.solution) {
-      renderGridOnPicrossArea(data.solution);
-      renderPreview(data.solution);
-      if (data.count !== undefined) {
-        document.getElementById('count').textContent = `試行回数: ${data.count}`;
-      }
-      stopTimer();
-      setTimeout(() => {
-        alert("処理が完了しました。");
-      }, 150);
-    } else if (data.error) {
-      // エラー時は必ずUIリセット
-      createPicrossArea(rows, cols);
-      renderPreview([]);
-      document.getElementById('count').textContent = '試行回数: 0';
-      document.getElementById('time').textContent = `計算時間: 0.00秒 `;
-      showErrorPopup(data.error);
-      stopTimer();
-    } else {
-      setTimeout(() => handleSolverStep(), 0);
-    }
-  }
-});
+document.getElementById('solveBtn').addEventListener('click', handleSolveButtonClick);
 
 document.getElementById('generateGridBtn').addEventListener('click', () => {
   const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
