@@ -29,8 +29,6 @@ function createEditorRows(tableId, count) {
     contentCell.className = 'line-content';
     contentCell.contentEditable = true;
     contentCell.dataset.line = i;
-    // inputmode属性を追加
-    contentCell.setAttribute('inputmode', 'numeric');
     contentCell.addEventListener('input', () => {
       // 行番号は固定なので何もしない
     });
