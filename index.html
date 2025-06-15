@@ -15,21 +15,26 @@
     </div>
     <div class="main-area">
       <div class="grid-hint-wrapper">
-        <!-- 新しいヒント入力UI -->
-        <div class="hints-inputs-v2">
-          <div class="hint-section" id="rowHintSection">
-            <div class="hint-header">行(横列)のヒント</div>
-            <div class="sticky-header-v2">
-              <button type="button" id="rowCommaBtn" class="ui-button-v2">カンマ</button>
+        <div class="hints-inputs">
+          <div class="hint-label-area">
+            <label>行（横方向）ヒント</label>
+            <div class="scroll-container" id="rowHintScroll">
+              <table class="editor-table" id="rowHintTable">
+                <tbody>
+                  <!-- 行はJSで生成 -->
+                </tbody>
+              </table>
             </div>
-            <div class="hint-input-list" id="rowHintList"></div>
           </div>
-          <div class="hint-section" id="colHintSection">
-            <div class="hint-header">列(縦列)のヒント</div>
-            <div class="sticky-header-v2">
-              <button type="button" id="colCommaBtn" class="ui-button-v2">カンマ</button>
+          <div class="hint-label-area">
+            <label>列（縦方向）ヒント</label>
+            <div class="scroll-container" id="colHintScroll">
+              <table class="editor-table" id="colHintTable">
+                <tbody>
+                  <!-- 行はJSで生成 -->
+                </tbody>
+              </table>
             </div>
-            <div class="hint-input-list" id="colHintList"></div>
           </div>
         </div>
         <div class="actions">
