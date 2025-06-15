@@ -105,16 +105,20 @@ function setupCommaButton(type) {
   const btn = document.getElementById(type === 'cols' ? 'colCommaBtn' : 'rowCommaBtn');
   btn.addEventListener('mousedown', () => {
     const activeInput = type === 'cols' ? activeColInput : activeRowInput;
-    if (activeInput) {
-      let val = activeInput.value.replace(/,(\s*)$/, '').trim();
-      if (val === '' || val.endsWith(',')) {
-        activeInput.focus();
-        return;
-      }
-      activeInput.value = val + ',';
-      activeInput.dispatchEvent(new Event('input'));
+    if (!activeInput) return;
+    const val = activeInput.value;
+    // すでに末尾がカンマ、または空欄なら何もしない
+    if (!val.trim() || val.trim().endsWith(',')) {
       activeInput.focus();
+      return;
     }
+    // 末尾の余分なカンマや空白を除去してからカンマ追加
+    const newVal = val.replace(/,(\s*)$/, '').trim() + ',';
+    if (activeInput.value !== newVal) {
+      activeInput.value = newVal;
+      activeInput.dispatchEvent(new Event('input'));
+    }
+    activeInput.focus();
   });
 }
 
