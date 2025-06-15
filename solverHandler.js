@@ -7,24 +7,10 @@ export async function handleSolveButtonClick() {
   const rows = parseInt(document.getElementById('rowSize').value, 10);
   const cols = parseInt(document.getElementById('colSize').value, 10);
 
+  // 入力取得・バリデーション
   const hints = window.getHints(rows, cols);
-  if (hints.errors) {
-    // ヒント合計値などの矛盾は具体的にアラート＋フォーカス
-    window.showErrorPopup(hints.errors.join('\n'));
-    if (hints.errorTargets && hints.errorTargets.length > 0) {
-      const first = hints.errorTargets[0];
-      setTimeout(() => {
-        if (first.type === 'row') {
-          const rowList = document.getElementById('rowHintList');
-          const input = rowList?.querySelectorAll('input')[first.index];
-          if (input) input.focus();
-        } else if (first.type === 'col') {
-          const colList = document.getElementById('colHintList');
-          const input = colList?.querySelectorAll('input')[first.index];
-          if (input) input.focus();
-        }
-      }, 50);
-    }
+  if (!hints) {
+    // エラー時はUIリセットのみ（計算時間・試行回数はリセットしない）
     return;
   }
   const { rowHints, colHints } = hints;
@@ -33,20 +19,25 @@ export async function handleSolveButtonClick() {
     return;
   }
 
+  // ソルバー初期化
   let solveGen;
   try {
     solveGen = window.solvePicross(rowHints, colHints);
-  } catch {
+  } catch (err) {
     window.showErrorPopup("ソルバーの初期化に失敗しました");
     return;
   }
   window.currentSolveGen = solveGen;
 
+  // UIリセット・計算時間/試行回数リセット・グリッド初期化
   window.resetSolveDisplay(rows, cols);
+
+  // DOM描画待ち
   await new Promise(resolve => setTimeout(resolve, 20));
   if (window.startTimer) window.startTimer();
 
   let stoppedByTrialLimit = false;
+
   handleSolverStep(solveGen.next());
 
   function handleSolverStep(prevRes) {
@@ -66,8 +57,8 @@ export async function handleSolveButtonClick() {
         document.getElementById('count').textContent = `試行回数: ${data.count}`;
         if (data.count > 10000) {
           stoppedByTrialLimit = true;
-          if (window.stopTimer) window.stopTimer();
-          window.resetSolveDisplay(rows, cols);
+          window.createPicrossArea(rows, cols);
+          window.renderPreview([]);
           setTimeout(() => {
             alert("試行回数が1万回を超えたため処理を中断しました。解が存在しない可能性があります。");
           }, 150);
@@ -86,29 +77,13 @@ export async function handleSolveButtonClick() {
         alert("処理が完了しました。");
       }, 150);
     } else if (data.error) {
+      // エラー時は必ずUIリセット
+      window.createPicrossArea(rows, cols);
+      window.renderPreview([]);
+      document.getElementById('count').textContent = '試行回数: 0';
+      document.getElementById('time').textContent = `計算時間: 0.00秒 `;
+      window.showErrorPopup(data.error);
       if (window.stopTimer) window.stopTimer();
-      window.resetSolveDisplay(rows, cols);
-      // 計算途中の矛盾はシンプルなアラートのみ
-      if (data.hintErrors && data.hintErrors.length > 0) {
-        // ヒント合計値などの矛盾は具体的にアラート＋フォーカス
-        window.showErrorPopup("ヒントに矛盾があります:\n" + data.hintErrors.join('\n'));
-        if (data.hintErrorTargets && data.hintErrorTargets.length > 0) {
-          const first = data.hintErrorTargets[0];
-          setTimeout(() => {
-            if (first.type === 'row') {
-              const rowList = document.getElementById('rowHintList');
-              const input = rowList?.querySelectorAll('input')[first.index];
-              if (input) input.focus();
-            } else if (first.type === 'col') {
-              const colList = document.getElementById('colHintList');
-              const input = colList?.querySelectorAll('input')[first.index];
-              if (input) input.focus();
-            }
-          }, 50);
-        }
-      } else {
-        window.showErrorPopup("矛盾が発生しました。ヒントや入力内容を見直してください。");
-      }
     } else {
       setTimeout(() => handleSolverStep(), 0);
     }
