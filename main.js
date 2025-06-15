@@ -103,7 +103,7 @@ function createHintInputList(type, size) {
 
 function setupCommaButton(type) {
   const btn = document.getElementById(type === 'cols' ? 'colCommaBtn' : 'rowCommaBtn');
-  btn.addEventListener('click', () => {
+  btn.addEventListener('mousedown', () => {
     const activeInput = type === 'cols' ? activeColInput : activeRowInput;
     if (activeInput) {
       let val = activeInput.value.replace(/,(\s*)$/, '').trim();
