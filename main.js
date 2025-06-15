@@ -75,10 +75,12 @@ function createHintInputList(type, size) {
     label.className = 'hint-input-label';
     label.textContent = i + 1;
     const input = document.createElement('input');
-    input.type = 'text';
-    input.pattern = '[0-9, ]*'; // スペースも許可
+    input.type = 'tel';
+    input.pattern = '[0-9, ]*';
+    input.inputMode = 'numeric'; // 追加: スマホで数字キーボードを強制
+    input.autocomplete = 'off';  // 追加: 予測変換を抑止
     input.className = 'hint-input-field';
-    input.placeholder = '例: 3,1,2';
+    input.placeholder = '例: 3,1,2（数字とカンマのみ）';
     input.addEventListener('focus', () => {
       if (type === 'cols') activeColInput = input;
       else activeRowInput = input;
