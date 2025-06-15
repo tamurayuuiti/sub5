@@ -76,7 +76,6 @@ function createHintInputList(type, size) {
     label.textContent = i + 1;
     const input = document.createElement('input');
     input.type = 'text';
-    input.inputmode = 'email';
     input.pattern = '[0-9, ]*'; // スペースも許可
     input.className = 'hint-input-field';
     input.placeholder = '例: 3,1,2';
