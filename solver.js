@@ -1,4 +1,4 @@
-// Picross Solver Core Logic in JavaScript
+// Picross Solver Core Logic in JavaScript (no server code, just pure logic)
 
 function isValidLine(line, hints) {
   const segments = [];
@@ -42,13 +42,7 @@ function filterPossibilitiesByFixed(possibilities, fixed) {
 }
 
 function getCertaintiesFromPoss(possList) {
-  if (
-    !possList ||
-    possList.length === 0 ||
-    !possList[0] ||
-    possList[0].length === 0 ||
-    !possList[0][0]
-  ) return null;
+  if (!possList || possList.some(c => c.length === 0)) return null;
   const length = possList[0][0].length;
   return possList.map(cands => {
     return Array.from({ length }, (_, i) => {
@@ -56,6 +50,25 @@ function getCertaintiesFromPoss(possList) {
       return values.size === 1 ? [...values][0] : null;
     });
   });
+}
+
+function checkHintSumValid(rowHints, colHints) {
+  const errors = [];
+  const height = rowHints.length;
+  const width = colHints.length;
+  for (let i = 0; i < height; i++) {
+    const minRequired = rowHints[i].reduce((a, b) => a + b, 0) + Math.max(0, rowHints[i].length - 1);
+    if (minRequired > width) {
+      errors.push(`${i + 1}行目のヒントが多すぎます`);
+    }
+  }
+  for (let i = 0; i < width; i++) {
+    const minRequired = colHints[i].reduce((a, b) => a + b, 0) + Math.max(0, colHints[i].length - 1);
+    if (minRequired > height) {
+      errors.push(`${i + 1}列目のヒントが多すぎます`);
+    }
+  }
+  return errors;
 }
 
 function applyHumanistic(rowHints, colHints) {
@@ -72,10 +85,11 @@ function applyHumanistic(rowHints, colHints) {
     count++;
 
     rowPoss = rowPoss.map((poss, i) => filterPossibilitiesByFixed(poss, grid[i]));
+    if (rowPoss.some(p => p.length === 0)) {
+      return { error: "矛盾: 行の候補が存在しません", grid: null, rowPoss, colPoss, count };
+    }
 
     const rowCerts = getCertaintiesFromPoss(rowPoss);
-    if (!rowCerts) break; // 候補が不正ならループ終了
-
     for (let i = 0; i < height; i++) {
       for (let j = 0; j < width; j++) {
         if (rowCerts[i][j] != null && grid[i][j] == null) {
@@ -89,10 +103,11 @@ function applyHumanistic(rowHints, colHints) {
       const col = grid.map(row => row[j]);
       return filterPossibilitiesByFixed(poss, col);
     });
+    if (colPoss.some(p => p.length === 0)) {
+      return { error: "矛盾: 列の候補が存在しません", grid: null, rowPoss, colPoss, count };
+    }
 
     const colCerts = getCertaintiesFromPoss(colPoss);
-    if (!colCerts) break; // 候補が不正ならループ終了
-
     for (let j = 0; j < width; j++) {
       for (let i = 0; i < height; i++) {
         if (colCerts[j][i] != null && grid[i][j] == null) {
@@ -125,20 +140,17 @@ function isValidSoFarLine(line, hints) {
 }
 
 function* solvePicross(rowHints, colHints) {
-  // ヒント矛盾検知はwindow.validateHintsを利用
-  const { errors: hintErrors, errorTargets: hintErrorTargets } = (typeof window !== "undefined" && window.validateHints)
-    ? window.validateHints(rowHints, colHints)
-    : { errors: [], errorTargets: [] };
+  const hintErrors = checkHintSumValid(rowHints, colHints);
   if (hintErrors.length > 0) {
-    yield { error: "ヒント矛盾: " + hintErrors.join(" / "), count: 0, hintErrors, hintErrorTargets };
+    yield { error: hintErrors.join(" / "), count: 0 };
     return;
   }
 
   const height = rowHints.length;
   const width = colHints.length;
-  const { grid: initialGrid, rowPoss, colPoss, count: humanisticCount, error, errorTarget } = applyHumanistic(rowHints, colHints);
+  const { grid: initialGrid, rowPoss, colPoss, count: humanisticCount, error } = applyHumanistic(rowHints, colHints);
   if (error) {
-    yield { error, count: humanisticCount, errorTarget };
+    yield { error, count: humanisticCount };
     return;
   }
 
@@ -146,14 +158,16 @@ function* solvePicross(rowHints, colHints) {
   const grid = initialGrid.map(row => row.map(cell => (cell == null ? -1 : cell)));
   const rowCandidates = rowPoss.map((poss, i) => filterPossibilitiesByFixed(poss, grid[i]));
 
+  if (rowCandidates.some(r => r.length === 0)) {
+    yield { error: "矛盾: 行の候補が存在しません（バックトラック前）", count: humanisticCount };
+    return;
+  }
+
   function* backtrack(grid, rowIdx) {
     if (rowIdx === height) {
       for (let j = 0; j < width; j++) {
         const col = grid.map(row => row[j]);
-        if (!isValidLine(col, colHints[j])) {
-          // 列jが矛盾
-          return false;
-        }
+        if (!isValidLine(col, colHints[j])) return false;
       }
       yield { solution: grid, done: true, count: humanisticCount + count.value };
       return true;
@@ -164,12 +178,10 @@ function* solvePicross(rowHints, colHints) {
       newGrid[rowIdx] = [...cand];
 
       let valid = true;
-      let invalidColIdx = -1;
       for (let j = 0; j < width; j++) {
         const colSoFar = newGrid.slice(0, rowIdx + 1).map(row => row[j]);
         if (!isValidSoFarLine(colSoFar, colHints[j])) {
           valid = false;
-          invalidColIdx = j;
           break;
         }
       }
