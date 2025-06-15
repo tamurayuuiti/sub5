@@ -75,7 +75,8 @@ function createHintInputList(type, size) {
     label.className = 'hint-input-label';
     label.textContent = i + 1;
     const input = document.createElement('input');
-    input.type = 'tel';
+    input.type = 'text';
+    input.inputmode = 'number';
     input.pattern = '[0-9, ]*'; // スペースも許可
     input.className = 'hint-input-field';
     input.placeholder = '例: 3,1,2';
