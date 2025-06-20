@@ -1,128 +1,5 @@
 import { handleSolveButtonClick } from './solverHandler.js';
 
-function parseHintsTextArea(text) {
-  // 各行ごとに分割し、カンマまたはスペースで区切る
-  return text.trim().split('\n').map(row =>
-    row.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0)
-  );
-}
-
-function createEditorRows(tableId, count) {
-  const tbody = document.getElementById(tableId).querySelector('tbody');
-  tbody.innerHTML = '';
-  for (let i = 1; i <= count; i++) {
-    const row = document.createElement('tr');
-    row.className = 'line-row';
-
-    const numCell = document.createElement('td');
-    numCell.className = 'line-number';
-    // 行・列の判定
-    if (tableId === 'rowHintTable') {
-      numCell.textContent = `${i}行`;
-    } else if (tableId === 'colHintTable') {
-      numCell.textContent = `${i}列`;
-    } else {
-      numCell.textContent = i;
-    }
-
-    const contentCell = document.createElement('td');
-    contentCell.className = 'line-content';
-    contentCell.contentEditable = true;
-    contentCell.dataset.line = i;
-    contentCell.addEventListener('input', () => {
-      // 行番号は固定なので何もしない
-    });
-    contentCell.addEventListener('keydown', (e) => {
-      // Enterで下へ
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const currentRow = e.target.closest('tr');
-        const nextRow = currentRow.nextElementSibling;
-        if (nextRow) {
-          const nextCell = nextRow.querySelector('.line-content');
-          nextCell.focus();
-        }
-      }
-      // 上下矢印で移動
-      else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        const currentRow = e.target.closest('tr');
-        let targetRow;
-        if (e.key === 'ArrowUp') {
-          targetRow = currentRow.previousElementSibling;
-        } else {
-          targetRow = currentRow.nextElementSibling;
-        }
-        if (targetRow) {
-          const targetCell = targetRow.querySelector('.line-content');
-          // キャレット位置を維持
-          const sel = window.getSelection();
-          const pos = sel && sel.focusOffset ? sel.focusOffset : null;
-          targetCell.focus();
-          if (pos !== null) {
-            // キャレット位置を再現
-            const range = document.createRange();
-            range.selectNodeContents(targetCell);
-            range.collapse(true);
-            // 文字数を超えないように
-            const len = targetCell.textContent.length;
-            const caret = Math.min(pos, len);
-            range.setStart(targetCell.firstChild || targetCell, caret);
-            range.setEnd(targetCell.firstChild || targetCell, caret);
-            sel.removeAllRanges();
-            sel.addRange(range);
-          }
-        }
-      }
-      // 先頭でDeleteなら前の段に移動
-      else if (e.key === 'Backspace' || e.key === 'Delete') {
-        const sel = window.getSelection();
-        // キャレットが先頭にあるかつ、空欄または先頭にいる場合
-        if (
-          sel &&
-          sel.anchorNode &&
-          sel.anchorOffset === 0 &&
-          (
-            sel.anchorNode === contentCell ||
-            sel.anchorNode === contentCell.firstChild ||
-            contentCell.textContent.length === 0
-          )
-        ) {
-          const currentRow = e.target.closest('tr');
-          const prevRow = currentRow.previousElementSibling;
-          if (prevRow) {
-            e.preventDefault();
-            const prevCell = prevRow.querySelector('.line-content');
-            prevCell.focus();
-            // キャレットを末尾に
-            const range = document.createRange();
-            range.selectNodeContents(prevCell);
-            range.collapse(false);
-            sel.removeAllRanges();
-            sel.addRange(range);
-          }
-        }
-      }
-    });
-
-    row.appendChild(numCell);
-    row.appendChild(contentCell);
-    tbody.appendChild(row);
-  }
-}
-
-function getEditorValues(tableId) {
-  const tbody = document.getElementById(tableId).querySelector('tbody');
-  return Array.from(tbody.querySelectorAll('.line-content')).map(cell => cell.textContent.trim());
-}
-
-function parseHintsEditor(lines) {
-  // 各行ごとに分割し、カンマまたはスペースで区切る
-  return lines.map(row =>
-    row.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0)
-  );
-}
-
 /**
  * ヒント矛盾チェック（行・列ヒントの合計値や不正値・空欄などを検出）
  * @param {number[][]} rowHints
@@ -276,80 +153,13 @@ function startTimer() {
   }, 10);
 }
 
-// テキストエリア入力・スクロール時に番号を同期
-function setupHintLabelSync() {
-  const rowInput = document.getElementById('rowHintsInput');
-  const colInput = document.getElementById('colHintsInput');
-  if (rowInput) {
-    rowInput.addEventListener('input', () => {
-      updateHintLabels(
-        parseInt(document.getElementById('rowSize').value, 10),
-        parseInt(document.getElementById('colSize').value, 10)
-      );
-    });
-    rowInput.addEventListener('scroll', () => {
-      document.getElementById('rowHintLabels').scrollTop = rowInput.scrollTop;
-    });
-  }
-  if (colInput) {
-    colInput.addEventListener('input', () => {
-      updateHintLabels(
-        parseInt(document.getElementById('rowSize').value, 10),
-        parseInt(document.getElementById('colSize').value, 10)
-      );
-    });
-    colInput.addEventListener('scroll', () => {
-      document.getElementById('colHintLabels').scrollTop = colInput.scrollTop;
-    });
-  }
-}
-
-function getHints(rows, cols) {
-  const rowLines = getEditorValues('rowHintTable');
-  const colLines = getEditorValues('colHintTable');
-  if (rowLines.length !== rows || colLines.length !== cols) {
-    showErrorPopup(`行ヒントは${rows}行、列ヒントは${cols}行で入力してください`);
-    return null;
-  }
-  const rowHints = parseHintsEditor(rowLines);
-  const colHints = parseHintsEditor(colLines);
-
-  // 入力値バリデーション
-  let invalid = false;
-  rowHints.forEach(arr => {
-    if (!arr.every(n => Number.isInteger(n) && n > 0)) invalid = true;
-  });
-  colHints.forEach(arr => {
-    if (!arr.every(n => Number.isInteger(n) && n > 0)) invalid = true;
-  });
-  if (invalid) {
-    showErrorPopup("ヒントは正の整数のみで入力してください（例: 2,1,3 または 2 1 3）");
-    return null;
-  }
-  return { rowHints, colHints };
-}
-
-function resetEditors(rows, cols) {
-  createEditorRows('rowHintTable', rows);
-  createEditorRows('colHintTable', cols);
-}
-
-// 初期表示でグリッドとヒント入力欄を生成
-window.addEventListener('DOMContentLoaded', () => {
-  const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
-  const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
-  createPicrossArea(rows, cols);
-  resetEditors(rows, cols);
-});
-
 // エラー表示の一元化
 window.showErrorPopup = function(msg) {
   alert(msg);
 }
 
 // グローバル公開
-window.getHints = getHints;
-window.validateHints = validateHints; // ← 追加
+window.validateHints = validateHints;
 window.resetSolveDisplay = resetSolveDisplay;
 window.renderGridOnPicrossArea = renderGridOnPicrossArea;
 window.renderPreview = renderPreview;
@@ -362,5 +172,14 @@ document.getElementById('generateGridBtn').addEventListener('click', () => {
   const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
   const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
   createPicrossArea(rows, cols);
-  resetEditors(rows, cols);
+  if (window.resetEditors) {
+    window.resetEditors(rows, cols);
+  }
+});
+
+// 初期表示でグリッドを生成
+window.addEventListener('DOMContentLoaded', () => {
+  const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
+  const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
+  createPicrossArea(rows, cols);
 });
