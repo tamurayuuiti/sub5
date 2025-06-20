@@ -69,7 +69,8 @@ export async function handleSolveButtonClick() {
           if (window.stopTimer) window.stopTimer();
           window.resetSolveDisplay(rows, cols);
           setTimeout(() => {
-            alert("試行回数が1万回を超えたため処理を中断しました。明確な解が存在しない可能性があります。");
+            const unitCount = Math.round(data.count / 10000);
+            alert(`試行回数が${unitCount}万回を超えたため処理を中断しました。明確な解が存在しない可能性があります。`);
           }, 150);
           return;
         }
