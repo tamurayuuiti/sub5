@@ -160,18 +160,28 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
   gap: 8px;
 }
 
-/* 新規追加: 横並び用ラッパー */
 .actions-flex {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr;
+  justify-items: center;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
-  width: 100%;
+  gap: 8px;
+  flex: 0 1 auto;
+  margin: 0 auto;
+}
+
+.actions-flex #solveBtn {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.actions-flex .action-info {
+  grid-row: 2;
+  grid-column: 1;
 }
 
 .action-info {
@@ -208,123 +218,8 @@ h1 {
 }
 
 /* --- 行番号付きエディタ風ヒント入力 --- */
-.hints-inputs {
-  display: flex;
-  gap: 32px;
-  justify-content: center;
-  margin-bottom: 18px;
-}
-.hint-label-area {
-  width: 100%;
-  min-width: 180px;
-  max-width: 260px;
-}
-.hint-label-area label {
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 4px;
-  display: block;
-}
-.scroll-container {
-  width: 220px;
-  height: 220px;
-  overflow-y: scroll;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 6px;
-}
-.editor-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #f8fafc;
-}
-.editor-table td {
-  vertical-align: top;
-  padding: 0;
-}
-.line-number {
-  width: 54px;
-  background: #f2f6fa;
-  color: #666;
-  text-align: right;
-  padding: 4px 5px;
-  border-right: 1px solid #ccc;
-  user-select: none;
-  font-family: 'monospace', 'Meiryo', sans-serif;
-  font-size: 1em;
-  border-radius: 6px 0 0 6px;
-  white-space: nowrap;
-}
-.line-content {
-  width: 100%;
-  min-width: 0;
-  padding: 4px 5px;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  font-family: 'monospace', 'Meiryo', sans-serif;
-  font-size: 1em;
-  outline: none;
-  border: none;
-  background: transparent;
-  border-radius: 0 6px 6px 0;
-  transition: background 0.2s;
-}
-.line-content[contenteditable] {
-  outline: none;
-}
-.line-row:hover .line-content,
-.line-content:focus {
-  background: #eaf4ff;
-}
-.scroll-container {
-  width: 220px;
-  height: 220px;
-  overflow-y: auto;
-  border: 1.5px solid #bbb;
-  background: #f8fafc;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px #0001;
-  margin-bottom: 8px;
-}
-.hint-label-area label {
-  font-weight: bold;
-  color: #2563c9;
-  margin-bottom: 4px;
-  display: block;
-  letter-spacing: 0.02em;
-  font-size: 1.03em;
-}
-.hints-inputs {
-  display: flex;
-  gap: 32px;
-  justify-content: center;
-  margin-bottom: 18px;
-}
-.hint-label-area {
-  width: 100%;
-  min-width: 180px;
-  max-width: 260px;
-}
-@media (max-width: 600px) {
-  .scroll-container {
-    width: 120px;
-    height: 120px;
-  }
-  .hint-label-area {
-    min-width: 80px;
-    max-width: 120px;
-  }
-  .line-number {
-    width: 34px;
-    font-size: 0.85em;
-    padding: 2px 2px;
-    white-space: nowrap;
-  }
-  .line-content {
-    font-size: 0.85em;
-    padding: 2px 2px;
-  }
-}
+/* --- ヒント入力テキストエリア用 --- */
+/* これらのセクションを削除 */
 
 /* --- プレビュー用 --- */
 #previewArea {
@@ -344,95 +239,3 @@ h1 {
 .preview-table .filled { background: #222; }
 .preview-table .empty { background: #fff; }
 .preview-table .unknown { background: #f0f0f0; }
-
-/* --- ヒント入力テキストエリア用 --- */
-.hints-inputs {
-  display: flex;
-  gap: 32px;
-  justify-content: center;
-  margin-bottom: 18px;
-}
-.hint-label-area {
-  width: 100%;
-  min-width: 120px;
-  max-width: 220px;
-}
-.hint-row-flex {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  min-height: 0;
-  max-height: 220px;
-}
-.hint-labels {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  background: #f2f6fa;
-  border: 1.5px solid #bbb;
-  border-right: none;
-  border-radius: 6px 0 0 6px;
-  font-size: 0.98em;
-  color: #888;
-  min-width: 2.2em;
-  max-width: 2.2em;
-  user-select: none;
-  box-sizing: border-box;
-  height: 160px;
-  max-height: 220px;
-  overflow-y: scroll;
-  padding: 0;
-}
-.hint-labels > div {
-  height: 1.8em;
-  line-height: 1.8em;
-  text-align: right;
-  padding-right: 4px;
-  font-variant-numeric: tabular-nums;
-  box-sizing: border-box;
-}
-.hint-row-flex textarea {
-  border-radius: 0 6px 6px 0;
-  border-left: none;
-  margin-left: 0;
-  width: 100%;
-  min-width: 0;
-  max-width: 160px;
-  font-size: 1em;
-  padding: 0.4em 0.5em;
-  background: #f2f6fa;
-  border: 1.5px solid #bbb;
-  border-radius: 0 6px 6px 0;
-  box-sizing: border-box;
-  resize: none;
-  height: 160px;
-  max-height: 220px;
-  overflow-y: scroll;
-  line-height: 1.8em;
-}
-.hints-inputs label {
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 4px;
-  display: inline-block;
-}
-
-/* モバイル対応 */
-@media (max-width: 600px) {
-  .hint-label-area {
-    min-width: 80px;
-    max-width: 120px;
-  }
-  .hint-labels > div {
-    height: 1.3em;
-    line-height: 1.3em;
-    font-size: 0.85em;
-  }
-  .hint-row-flex textarea,
-  .hint-labels {
-    height: 100px;
-    max-height: 140px;
-  }
-}
-
-/* ...既存のピクロスグリッドやその他のスタイルはそのまま... */
