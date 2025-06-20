@@ -64,12 +64,12 @@ export async function handleSolveButtonClick() {
       window.renderGridOnPicrossArea(data.partial);
       if (data.count !== undefined) {
         document.getElementById('count').textContent = `試行回数: ${data.count}`;
-        if (data.count > 10000) {
+        if (data.count > 100000) {
           stoppedByTrialLimit = true;
           if (window.stopTimer) window.stopTimer();
           window.resetSolveDisplay(rows, cols);
           setTimeout(() => {
-            alert("試行回数が1万回を超えたため処理を中断しました。解が存在しない可能性があります。");
+            alert("試行回数が1万回を超えたため処理を中断しました。明確な解が存在しない可能性があります。");
           }, 150);
           return;
         }
