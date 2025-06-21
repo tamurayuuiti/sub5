@@ -1,4 +1,4 @@
-import { handleSolveButtonClick } from './solverHandler.js';
+import { handleSolveButtonClick } from './logic/solverHandler.js';
 
 /**
  * ヒント矛盾チェック（行・列ヒントの合計値や不正値・空欄などを検出）
