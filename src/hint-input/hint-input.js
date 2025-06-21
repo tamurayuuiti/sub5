@@ -1,3 +1,6 @@
+// --------------------------------------------------------------------------
+// ヒント入力欄：テキストエリア型パース
+// --------------------------------------------------------------------------
 function parseHintsTextArea(text) {
   // 各行ごとに分割し、カンマまたはスペースで区切る
   return text.trim().split('\n').map(row =>
@@ -5,6 +8,9 @@ function parseHintsTextArea(text) {
   );
 }
 
+// --------------------------------------------------------------------------
+// エディタ風ヒント入力欄の生成・操作
+// --------------------------------------------------------------------------
 function createEditorRows(tableId, count) {
   const tbody = document.getElementById(tableId).querySelector('tbody');
   tbody.innerHTML = '';
@@ -121,7 +127,9 @@ function parseHintsEditor(lines) {
   );
 }
 
+// --------------------------------------------------------------------------
 // テキストエリア入力・スクロール時に番号を同期
+// --------------------------------------------------------------------------
 function setupHintLabelSync() {
   const rowInput = document.getElementById('rowHintsInput');
   const colInput = document.getElementById('colHintsInput');
@@ -149,6 +157,9 @@ function setupHintLabelSync() {
   }
 }
 
+// --------------------------------------------------------------------------
+// エディタ風ヒント入力欄の値取得・バリデーション
+// --------------------------------------------------------------------------
 function getHints(rows, cols) {
   const rowLines = getEditorValues('rowHintTable');
   const colLines = getEditorValues('colHintTable');
@@ -186,8 +197,9 @@ window.addEventListener('DOMContentLoaded', () => {
   resetEditors(rows, cols);
 });
 
-// --- ▼▼▼ シンプルなテキストボックス型ヒント入力欄 ▼▼▼ ---
-
+// --------------------------------------------------------------------------
+// シンプルなテキストボックス型ヒント入力欄
+// --------------------------------------------------------------------------
 /**
  * シンプルなテキストボックス型ヒント入力欄を生成
  * @param {number} rows
@@ -267,8 +279,9 @@ function parseSimpleTextboxHints(lines) {
 
 // --- ▲▲▲ 新スタイルここまで ▲▲▲ ---
 
-// --- ▼▼▼ スタイル切り替えロジック ▼▼▼ ---
-
+// --------------------------------------------------------------------------
+// スタイル切り替えロジック
+// --------------------------------------------------------------------------
 /**
  * ヒント入力欄のスタイルを切り替える
  * @param {'textbox'|'editor'} style
@@ -276,26 +289,20 @@ function parseSimpleTextboxHints(lines) {
  * @param {number} cols
  */
 function switchHintInputStyle(style, rows, cols) {
-  const hintsInputs = document.querySelector('.hints-inputs');
-  if (!hintsInputs) return;
+  const textboxBlock = document.getElementById('hintInputTextboxBlock');
+  const editorBlock = document.getElementById('hintInputEditorBlock');
+  if (!textboxBlock || !editorBlock) return;
   if (style === 'textbox') {
-    createSimpleTextboxHintInputs(rows, cols);
+    textboxBlock.style.display = '';
+    editorBlock.style.display = 'none';
+    // 横並びを維持
+    textboxBlock.style.flexDirection = 'row';
+    document.getElementById('rowHintTextbox').value = '';
+    document.getElementById('colHintTextbox').value = '';
   } else {
-    // editor
-    hintsInputs.innerHTML = `
-      <div class="hint-label-area">
-        <label>行（横方向）ヒント</label>
-        <div class="scroll-container" id="rowHintScroll">
-          <table class="editor-table" id="rowHintTable"><tbody></tbody></table>
-        </div>
-      </div>
-      <div class="hint-label-area">
-        <label>列（縦方向）ヒント</label>
-        <div class="scroll-container" id="colHintScroll">
-          <table class="editor-table" id="colHintTable"><tbody></tbody></table>
-        </div>
-      </div>
-    `;
+    textboxBlock.style.display = 'none';
+    editorBlock.style.display = '';
+    editorBlock.style.flexDirection = 'row';
     createEditorRows('rowHintTable', rows);
     createEditorRows('colHintTable', cols);
   }
@@ -358,25 +365,9 @@ function getHintsUnified(rows, cols) {
 function resetHintsUnified(rows, cols) {
   const style = window.currentHintInputStyle || 'textbox';
   if (style === 'textbox') {
-    resetSimpleTextboxHintInputs(rows, cols);
+    document.getElementById('rowHintTextbox').value = '';
+    document.getElementById('colHintTextbox').value = '';
   } else {
-    // editor
-    const hintsInputs = document.querySelector('.hints-inputs');
-    if (!hintsInputs) return;
-    hintsInputs.innerHTML = `
-      <div class="hint-label-area">
-        <label>行（横方向）ヒント</label>
-        <div class="scroll-container" id="rowHintScroll">
-          <table class="editor-table" id="rowHintTable"><tbody></tbody></table>
-        </div>
-      </div>
-      <div class="hint-label-area">
-        <label>列（縦方向）ヒント</label>
-        <div class="scroll-container" id="colHintScroll">
-          <table class="editor-table" id="colHintTable"><tbody></tbody></table>
-        </div>
-      </div>
-    `;
     createEditorRows('rowHintTable', rows);
     createEditorRows('colHintTable', cols);
   }
@@ -384,30 +375,25 @@ function resetHintsUnified(rows, cols) {
 
 // --- ▲▲▲ スタイル切り替えロジックここまで ▲▲▲ ---
 
-// --- ▼▼▼ スタイル切り替えUI生成 ▼▼▼ ---
+// --------------------------------------------------------------------------
+// スタイル切り替えUI生成
+// --------------------------------------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
-  const settings = document.querySelector('.settings');
-  if (settings && !document.getElementById('hintStyleTextbox')) {
-    const styleSwitchDiv = document.createElement('div');
-    styleSwitchDiv.className = 'hint-style-switch';
-    styleSwitchDiv.innerHTML = `
-      <label style="font-weight:normal;">
-        <input type="radio" name="hintStyle" id="hintStyleTextbox" value="textbox" checked>
-        テキストボックス
-      </label>
-      <label style="font-weight:normal; margin-left:8px;">
-        <input type="radio" name="hintStyle" id="hintStyleEditor" value="editor">
-        エディタ風
-      </label>
-    `;
-    settings.appendChild(styleSwitchDiv);
-
-    styleSwitchDiv.addEventListener('change', (e) => {
-      const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
-      const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
-      if (e.target.value === 'textbox') {
+  // スタイル切り替えUIのイベントのみ設定
+  const radioTextbox = document.getElementById('hintStyleTextbox');
+  const radioEditor = document.getElementById('hintStyleEditor');
+  if (radioTextbox && radioEditor) {
+    radioTextbox.addEventListener('change', () => {
+      if (radioTextbox.checked) {
+        const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
+        const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
         switchHintInputStyle('textbox', rows, cols);
-      } else if (e.target.value === 'editor') {
+      }
+    });
+    radioEditor.addEventListener('change', () => {
+      if (radioEditor.checked) {
+        const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
+        const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
         switchHintInputStyle('editor', rows, cols);
       }
     });
@@ -418,7 +404,9 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 // --- ▲▲▲ スタイル切り替えUI生成ここまで ▲▲▲ ---
 
+// --------------------------------------------------------------------------
 // グローバル公開
+// --------------------------------------------------------------------------
 window.getHints = getHintsUnified;
 window.resetEditors = resetHintsUnified;
 window.createEditorRows = createEditorRows;
@@ -426,7 +414,6 @@ window.getEditorValues = getEditorValues;
 window.parseHintsTextArea = parseHintsTextArea;
 window.parseHintsEditor = parseHintsEditor;
 window.setupHintLabelSync = setupHintLabelSync;
-
 // 新スタイル用も公開
 window.switchHintInputStyle = switchHintInputStyle;
 window.getSimpleTextboxHintValues = getSimpleTextboxHintValues;
