@@ -1,14 +1,4 @@
 // --------------------------------------------------------------------------
-// ヒント入力欄：テキストエリア型パース
-// --------------------------------------------------------------------------
-function parseHintsTextArea(text) {
-  // 各行ごとに分割し、カンマまたはスペースで区切る
-  return text.trim().split('\n').map(row =>
-    row.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0)
-  );
-}
-
-// --------------------------------------------------------------------------
 // エディタ風ヒント入力欄の生成・操作
 // --------------------------------------------------------------------------
 function createEditorRows(tableId, count) {
@@ -128,6 +118,35 @@ function parseHintsEditor(lines) {
 }
 
 // --------------------------------------------------------------------------
+// エディタ風ヒント入力欄の値取得・バリデーション
+// --------------------------------------------------------------------------
+function getHints(rows, cols) {
+  const rowLines = getEditorValues('rowHintTable');
+  const colLines = getEditorValues('colHintTable');
+  if (rowLines.length !== rows || colLines.length !== cols) {
+    showErrorPopup(`行ヒントは${rows}行、列ヒントは${cols}行で入力してください`);
+    return null;
+  }
+  const rowHints = parseHintsEditor(rowLines);
+  const colHints = parseHintsEditor(colLines);
+
+  // validateHintsを利用してバリデーション
+  if (window.validateHints) {
+    const { errors } = window.validateHints(rowHints, colHints);
+    if (errors && errors.length > 0) {
+      showErrorPopup(errors.join('\n'));
+      return null;
+    }
+  }
+  return { rowHints, colHints };
+}
+
+function resetEditors(rows, cols) {
+  createEditorRows('rowHintTable', rows);
+  createEditorRows('colHintTable', cols);
+}
+
+// --------------------------------------------------------------------------
 // テキストエリア入力・スクロール時に番号を同期
 // --------------------------------------------------------------------------
 function setupHintLabelSync() {
@@ -156,46 +175,6 @@ function setupHintLabelSync() {
     });
   }
 }
-
-// --------------------------------------------------------------------------
-// エディタ風ヒント入力欄の値取得・バリデーション
-// --------------------------------------------------------------------------
-function getHints(rows, cols) {
-  const rowLines = getEditorValues('rowHintTable');
-  const colLines = getEditorValues('colHintTable');
-  if (rowLines.length !== rows || colLines.length !== cols) {
-    showErrorPopup(`行ヒントは${rows}行、列ヒントは${cols}行で入力してください`);
-    return null;
-  }
-  const rowHints = parseHintsEditor(rowLines);
-  const colHints = parseHintsEditor(colLines);
-
-  // 入力値バリデーション
-  let invalid = false;
-  rowHints.forEach(arr => {
-    if (!arr.every(n => Number.isInteger(n) && n > 0)) invalid = true;
-  });
-  colHints.forEach(arr => {
-    if (!arr.every(n => Number.isInteger(n) && n > 0)) invalid = true;
-  });
-  if (invalid) {
-    showErrorPopup("ヒントは正の整数のみで入力してください（例: 2,1,3 または 2 1 3）");
-    return null;
-  }
-  return { rowHints, colHints };
-}
-
-function resetEditors(rows, cols) {
-  createEditorRows('rowHintTable', rows);
-  createEditorRows('colHintTable', cols);
-}
-
-// 初期表示でグリッドとヒント入力欄を生成
-window.addEventListener('DOMContentLoaded', () => {
-  const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
-  const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
-  resetEditors(rows, cols);
-});
 
 // --------------------------------------------------------------------------
 // シンプルなテキストボックス型ヒント入力欄
@@ -277,7 +256,33 @@ function parseSimpleTextboxHints(lines) {
   );
 }
 
-// --- ▲▲▲ 新スタイルここまで ▲▲▲ ---
+// --------------------------------------------------------------------------
+// スタイル切り替えUI生成
+// --------------------------------------------------------------------------
+window.addEventListener('DOMContentLoaded', () => {
+  // スタイル切り替えUIのイベントのみ設定
+  const radioTextbox = document.getElementById('hintStyleTextbox');
+  const radioEditor = document.getElementById('hintStyleEditor');
+  if (radioTextbox && radioEditor) {
+    radioTextbox.addEventListener('change', () => {
+      if (radioTextbox.checked) {
+        const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
+        const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
+        switchHintInputStyle('textbox', rows, cols);
+      }
+    });
+    radioEditor.addEventListener('change', () => {
+      if (radioEditor.checked) {
+        const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
+        const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
+        switchHintInputStyle('editor', rows, cols);
+      }
+    });
+  }
+  const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
+  const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
+  switchHintInputStyle('textbox', rows, cols);
+});
 
 // --------------------------------------------------------------------------
 // スタイル切り替えロジック
@@ -342,17 +347,13 @@ function getHintsUnified(rows, cols) {
     rowHints = parseHintsEditor(rowLines);
     colHints = parseHintsEditor(colLines);
   }
-  // 入力値バリデーション
-  let invalid = false;
-  rowHints.forEach(arr => {
-    if (!arr.every(n => Number.isInteger(n) && n > 0)) invalid = true;
-  });
-  colHints.forEach(arr => {
-    if (!arr.every(n => Number.isInteger(n) && n > 0)) invalid = true;
-  });
-  if (invalid) {
-    showErrorPopup("ヒントは正の整数のみで入力してください（例: 2,1,3 または 2 1 3）");
-    return null;
+  // validateHintsを利用してバリデーション
+  if (window.validateHints) {
+    const { errors } = window.validateHints(rowHints, colHints);
+    if (errors && errors.length > 0) {
+      showErrorPopup(errors.join('\n'));
+      return null;
+    }
   }
   return { rowHints, colHints };
 }
@@ -373,37 +374,6 @@ function resetHintsUnified(rows, cols) {
   }
 }
 
-// --- ▲▲▲ スタイル切り替えロジックここまで ▲▲▲ ---
-
-// --------------------------------------------------------------------------
-// スタイル切り替えUI生成
-// --------------------------------------------------------------------------
-window.addEventListener('DOMContentLoaded', () => {
-  // スタイル切り替えUIのイベントのみ設定
-  const radioTextbox = document.getElementById('hintStyleTextbox');
-  const radioEditor = document.getElementById('hintStyleEditor');
-  if (radioTextbox && radioEditor) {
-    radioTextbox.addEventListener('change', () => {
-      if (radioTextbox.checked) {
-        const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
-        const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
-        switchHintInputStyle('textbox', rows, cols);
-      }
-    });
-    radioEditor.addEventListener('change', () => {
-      if (radioEditor.checked) {
-        const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
-        const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
-        switchHintInputStyle('editor', rows, cols);
-      }
-    });
-  }
-  const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
-  const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
-  switchHintInputStyle('textbox', rows, cols);
-});
-// --- ▲▲▲ スタイル切り替えUI生成ここまで ▲▲▲ ---
-
 // --------------------------------------------------------------------------
 // グローバル公開
 // --------------------------------------------------------------------------
@@ -411,10 +381,8 @@ window.getHints = getHintsUnified;
 window.resetEditors = resetHintsUnified;
 window.createEditorRows = createEditorRows;
 window.getEditorValues = getEditorValues;
-window.parseHintsTextArea = parseHintsTextArea;
 window.parseHintsEditor = parseHintsEditor;
 window.setupHintLabelSync = setupHintLabelSync;
-// 新スタイル用も公開
 window.switchHintInputStyle = switchHintInputStyle;
 window.getSimpleTextboxHintValues = getSimpleTextboxHintValues;
 window.parseSimpleTextboxHints = parseSimpleTextboxHints;
