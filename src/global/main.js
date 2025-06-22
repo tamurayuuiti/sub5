@@ -1,5 +1,15 @@
 import { handleSolveButtonClick } from '../solver/solverHandler.js';
 
+// --------------------------------------------------------------------------
+// ヒント矛盾チェック・バリデーション
+// --------------------------------------------------------------------------
+function parseHintsTextArea(text) {
+  // 各行ごとに分割し、カンマまたはスペースで区切る
+  return text.trim().split('\n').map(row =>
+    row.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && n > 0)
+  );
+}
+
 /**
  * ヒント矛盾チェック（行・列ヒントの合計値や不正値・空欄などを検出）
  * @param {number[][]} rowHints
@@ -60,7 +70,9 @@ function validateHints(rowHints, colHints) {
   return { errors, errorTargets };
 }
 
-// --- ピクロスグリッド・プレビュー等 ---
+// --------------------------------------------------------------------------
+// ピクロスグリッド生成・描画
+// --------------------------------------------------------------------------
 function createPicrossArea(rows, cols) {
   const area = document.getElementById('picrossArea');
   area.innerHTML = '';
@@ -119,6 +131,9 @@ function renderPreview(grid) {
   previewArea.innerHTML = html;
 }
 
+// --------------------------------------------------------------------------
+// タイマー・リセット処理
+// --------------------------------------------------------------------------
 let startTime = 0, timerInterval = null;
 function resetGridCellsToUnknown(rows, cols) {
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -153,19 +168,27 @@ function startTimer() {
   }, 10);
 }
 
-// エラー表示の一元化
+// --------------------------------------------------------------------------
+// エラー表示
+// --------------------------------------------------------------------------
 window.showErrorPopup = function(msg) {
   alert(msg);
 }
 
+// --------------------------------------------------------------------------
 // グローバル公開
+// --------------------------------------------------------------------------
 window.validateHints = validateHints;
 window.resetSolveDisplay = resetSolveDisplay;
+window.parseHintsTextArea = parseHintsTextArea;
 window.renderGridOnPicrossArea = renderGridOnPicrossArea;
 window.renderPreview = renderPreview;
 window.startTimer = startTimer;
 window.stopTimer = stopTimer;
 
+// --------------------------------------------------------------------------
+// イベント登録
+// --------------------------------------------------------------------------
 document.getElementById('solveBtn').addEventListener('click', handleSolveButtonClick);
 
 document.getElementById('generateGridBtn').addEventListener('click', () => {
@@ -177,7 +200,9 @@ document.getElementById('generateGridBtn').addEventListener('click', () => {
   }
 });
 
-// 初期表示でグリッドを生成
+// --------------------------------------------------------------------------
+// 初期表示処理
+// --------------------------------------------------------------------------
 window.addEventListener('DOMContentLoaded', () => {
   const rows = parseInt(document.getElementById('rowSize').value, 10) || 15;
   const cols = parseInt(document.getElementById('colSize').value, 10) || 15;
